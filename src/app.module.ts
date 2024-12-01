@@ -5,6 +5,8 @@ import { WeatherModule } from './weather/weather.module';
 import { WarmthModule } from './warmth/warmth.module';
 import { ConfigModule } from '@nestjs/config';
 import { RecommendationModule } from './recommendation/recommendation.module';
+import { PredictionService } from './prediction/prediction.service';
+import { PredictionController } from './prediction/prediction.controller';
 
 @Module({
   imports: [
@@ -13,7 +15,7 @@ import { RecommendationModule } from './recommendation/recommendation.module';
     WarmthModule,
     RecommendationModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [AppController, PredictionController],
+  providers: [AppService, PredictionService],
 })
 export class AppModule {}

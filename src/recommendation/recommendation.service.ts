@@ -28,7 +28,7 @@ export class RecommendationService {
     } else if (temp > 10) {
       return 1.0;
     } else {
-      return 1.5 + windSpeed * 0.1; //added wind for wind breeze
+      return 1.5 + windSpeed * 0.1;
     }
   }
 }
