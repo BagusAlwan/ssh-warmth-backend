@@ -9,18 +9,23 @@ export class PredictionService {
   // Function to call the Python script for prediction
   async predict(imagePath: string): Promise<any> {
     try {
-      // Run the Python script and suppress the warnings using the Python `warnings` module
+      console.log('Executing prediction script with image:', imagePath);
+
+      // Execute the Python script
       const result = await execPromise(
-        `python3 /home/bgslwn/src/school/softwarePP/warmssh/src/prediction/predict.py ${imagePath}`,
+        `python3 /home/bgslwn/src/school/softwarePP/warmssh/src/prediction/predict.py "${imagePath}"`,
       );
 
-      // Assuming your Python script returns JSON
-      return JSON.parse(result.stdout); // Parse the result and return it
+      console.log('Python script stdout:', result.stdout);
+
+      // Parse and return the JSON result
+      return JSON.parse(result.stdout);
     } catch (error) {
-      console.error('Error during prediction:', error); // Log error for debugging
-      throw new Error(
-        'Prediction failed: ' + (error.message || 'Unknown error'),
-      );
+      console.error('Prediction script stderr:', error.stderr);
+      console.error('Prediction script stdout:', error.stdout);
+      console.error('Error during prediction:', error.message);
+
+      throw new Error('Prediction failed: ' + error.message);
     }
   }
 }

@@ -23,12 +23,14 @@ export class RecommendationService {
 
   //logic nya for now like this
   private calculateIdealWarmthIndex(temp: number, windSpeed: number): number {
-    if (temp > 20) {
-      return 0.5;
-    } else if (temp > 10) {
-      return 1.0;
-    } else {
+    if (temp < 0) {
+      return 2.5 + windSpeed * 0.1;
+    } else if (temp <= 10) {
       return 1.5 + windSpeed * 0.1;
+    } else if (temp <= 20) {
+      return 1 + windSpeed * 0.1;
+    } else {
+      return 0.5;
     }
   }
 }

@@ -1,31 +1,52 @@
-import { Controller, Post, Body, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  UploadedFile,
+  UseInterceptors,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { PredictionService } from './prediction.service';
+import * as fs from 'fs';
 
 @Controller('prediction')
 export class PredictionController {
   constructor(private readonly predictionService: PredictionService) {}
 
-  async predictWithTimeout(imagePath: string, timeout: number) {
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Prediction timed out')), timeout),
-    );
-    const predictionPromise = this.predictionService.predict(imagePath);
-
-    return Promise.race([predictionPromise, timeoutPromise]);
-  }
-
   @Post()
-  async predict(@Body('imagePath') imagePath: string): Promise<any> {
-    if (!imagePath) {
-      throw new BadRequestException('Image path is required.');
+  @UseInterceptors(FileInterceptor('image'))
+  async predict(@UploadedFile() file: Express.Multer.File): Promise<any> {
+    if (!file) {
+      throw new BadRequestException('Image file is required.');
+    }
+
+    // Validate file type and size
+    if (!file.mimetype.startsWith('image/')) {
+      throw new BadRequestException('Only image files are allowed.');
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      // 5MB
+      throw new BadRequestException('File size exceeds the limit of 5MB.');
     }
 
     try {
-      const result = await this.predictWithTimeout(imagePath, 30000); // Set a 30 second timeout
-      return result;
+      const result = await this.predictionService.predict(file.path);
+
+      // Delete file after processing
+      fs.unlinkSync(file.path);
+
+      return {
+        success: true,
+        data: result,
+      };
     } catch (error) {
-      console.error(`Prediction failed: ${error.message}`);
-      throw new BadRequestException(`Prediction failed: ${error.message}`);
+      fs.unlinkSync(file.path); // Cleanup on error
+      console.error('Unexpected error:', error);
+      throw new InternalServerErrorException(
+        `Prediction failed: ${error.message}`,
+      );
     }
   }
 }
