@@ -22,15 +22,6 @@ export class PredictionController {
     }
 
     console.log('Uploaded file:', file);
-
-    //if (!file.mimetype.startsWith('image/')) {
-    //  throw new BadRequestException('Only image files are allowed.');
-    //}
-
-    //if (file.size > 5 * 1024 * 1024) {
-    //  throw new BadRequestException('File size exceeds the limit of 5MB.');
-    //}
-
     try {
       const result = await this.predictionService.predict(file.path);
       fs.unlinkSync(file.path);
