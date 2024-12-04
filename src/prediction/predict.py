@@ -1,3 +1,4 @@
+# Libraries
 import torch
 from transformers import AutoImageProcessor, AutoModelForObjectDetection
 from PIL import Image
@@ -9,7 +10,7 @@ import numpy as np
 from PIL import ImageEnhance, ImageFilter
 
 
-# Suppress specific deprecation warning
+# Suppress warning
 warnings.filterwarnings("ignore", message=".*max_size.*deprecated.*")
 
 # Clothing categories based on ISO 9920:2007
@@ -30,7 +31,7 @@ class_names = [
     'bow', 'flower', 'fringe', 'ribbon', 'rivet', 'ruffle', 'sequin', 'tassel'
 ]
 
-# Warmth values for clothing based on ISO 9920:2007 standards (example values, adjust as needed)
+# Warmth values for clothing based on ISO 9920:2007 standards 
 clothing_warmth_values = {
     'jacket': 3, 'coat': 3, 'sweater': 2.5, 'cardigan': 2, 'vest': 1.5,
     'shirt, blouse': 1, 'top, t-shirt, sweatshirt': 1, 'dress': 2, 'jumpsuit': 2,
@@ -40,35 +41,12 @@ clothing_warmth_values = {
 }
 
 def preprocess_image(image_path):
-       # Open the image
+       # Open the image and convert to RGB
     image = Image.open(image_path).convert('RGB')
-
-    # Enhance contrast and brightness
-    enhancer = ImageEnhance.Contrast(image)
-    image = enhancer.enhance(2)  # Increase contrast (adjust this factor)
-    #nhancer = ImageEnhance.Brightness(image)
-    image = enhancer.enhance(1.2)  # Adjust brightness (adjust this factor)
-
-    # Sharpen the image
-    image = image.filter(ImageFilter.SHARPEN())
-
-    # Resize (upscale) the image to a higher resolution
-    image = image.resize((image.width * 2, image.height * 2))  # Upscale by a factor of 2
-
-    # Convert image to numpy array for noise reduction (using OpenCV)
-    open_cv_image = np.array(image)
-
-    # Reduce noise using OpenCV's denoising function
-    open_cv_image = cv2.fastNlMeansDenoisingColored(open_cv_image, None, 10, 10, 7, 21)
-
-    # Convert back to PIL Image
-    image = Image.fromarray(cv2.cvtColor(open_cv_image, cv2.COLOR_BGR2RGB))
-
     return image
 
 def detect_clothes_and_warmth(image_path):
     try:
-        # Open the image and convert to RGB to avoid channel dimension errors
         image = preprocess_image(image_path)
 
         # Load processor and model
@@ -112,7 +90,7 @@ def detect_clothes_and_warmth(image_path):
             elif clothing_name in accessories:
                 detected_clothes['accessories'].add(clothing_name)
 
-        # Convert sets to lists for better JSON compatibility
+        # Convert sets to lists for JSON compatibility
         for category in detected_clothes:
             detected_clothes[category] = list(detected_clothes[category])
 
