@@ -4,6 +4,10 @@ from PIL import Image
 import sys
 import json
 import warnings
+import cv2
+import numpy as np
+from PIL import ImageEnhance, ImageFilter
+
 
 # Suppress specific deprecation warning
 warnings.filterwarnings("ignore", message=".*max_size.*deprecated.*")
@@ -16,7 +20,7 @@ lower_body = ['pants', 'skirt', 'tights, stockings', 'shorts']
 accessories = ['hat', 'scarf', 'glove', 'shoe', 'bag, wallet', 'glasses', 'umbrella', 
                'headband, head covering, hair accessory']
 
-# Class names as per the object detection model (you may need to modify if your model has different classes)
+# Class names 
 class_names = [
     'shirt, blouse', 'top, t-shirt, sweatshirt', 'sweater', 'cardigan', 'jacket', 'vest',
     'pants', 'shorts', 'skirt', 'coat', 'dress', 'jumpsuit', 'cape', 'glasses', 'hat',
@@ -35,10 +39,37 @@ clothing_warmth_values = {
     'glasses': 0, 'umbrella': 0, 'headband, head covering, hair accessory': 0
 }
 
+def preprocess_image(image_path):
+       # Open the image
+    image = Image.open(image_path).convert('RGB')
+
+    # Enhance contrast and brightness
+    enhancer = ImageEnhance.Contrast(image)
+    image = enhancer.enhance(2)  # Increase contrast (adjust this factor)
+    #nhancer = ImageEnhance.Brightness(image)
+    image = enhancer.enhance(1.2)  # Adjust brightness (adjust this factor)
+
+    # Sharpen the image
+    image = image.filter(ImageFilter.SHARPEN())
+
+    # Resize (upscale) the image to a higher resolution
+    image = image.resize((image.width * 2, image.height * 2))  # Upscale by a factor of 2
+
+    # Convert image to numpy array for noise reduction (using OpenCV)
+    open_cv_image = np.array(image)
+
+    # Reduce noise using OpenCV's denoising function
+    open_cv_image = cv2.fastNlMeansDenoisingColored(open_cv_image, None, 10, 10, 7, 21)
+
+    # Convert back to PIL Image
+    image = Image.fromarray(cv2.cvtColor(open_cv_image, cv2.COLOR_BGR2RGB))
+
+    return image
+
 def detect_clothes_and_warmth(image_path):
     try:
         # Open the image and convert to RGB to avoid channel dimension errors
-        image = Image.open(image_path).convert('RGB')
+        image = preprocess_image(image_path)
 
         # Load processor and model
         processor = AutoImageProcessor.from_pretrained("valentinafeve/yolos-fashionpedia")
@@ -52,7 +83,7 @@ def detect_clothes_and_warmth(image_path):
 
         # Post-process the outputs
         target_sizes = torch.tensor([image.size[::-1]]) 
-        results = processor.post_process_object_detection(outputs, target_sizes=target_sizes, threshold=0.5)[0]
+        results = processor.post_process_object_detection(outputs, target_sizes=target_sizes, threshold=0.3)[0]
 
         # Initialize categories for detected clothes
         detected_clothes = {

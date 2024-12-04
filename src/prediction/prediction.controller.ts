@@ -21,28 +21,22 @@ export class PredictionController {
       throw new BadRequestException('Image file is required.');
     }
 
-    // Validate file type and size
-    if (!file.mimetype.startsWith('image/')) {
-      throw new BadRequestException('Only image files are allowed.');
-    }
+    console.log('Uploaded file:', file);
 
-    if (file.size > 5 * 1024 * 1024) {
-      // 5MB
-      throw new BadRequestException('File size exceeds the limit of 5MB.');
-    }
+    //if (!file.mimetype.startsWith('image/')) {
+    //  throw new BadRequestException('Only image files are allowed.');
+    //}
+
+    //if (file.size > 5 * 1024 * 1024) {
+    //  throw new BadRequestException('File size exceeds the limit of 5MB.');
+    //}
 
     try {
       const result = await this.predictionService.predict(file.path);
-
-      // Delete file after processing
       fs.unlinkSync(file.path);
-
-      return {
-        success: true,
-        data: result,
-      };
+      return { success: true, data: result };
     } catch (error) {
-      fs.unlinkSync(file.path); // Cleanup on error
+      fs.unlinkSync(file.path);
       console.error('Unexpected error:', error);
       throw new InternalServerErrorException(
         `Prediction failed: ${error.message}`,

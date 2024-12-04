@@ -13,15 +13,27 @@ export class RecommendationController {
   async reccomClothes(
     @Body() body: { lat: string; lon: string; warmthIndex: number },
   ): Promise<{ recommendations: string[] }> {
-    const { lat, lon, warmthIndex } = body;
-    const weather = await this.weatherService.getWeather(lat, lon);
-    const { temp, wind_speed } = weather.main;
+    console.log('Received request:', body);
 
-    const recommendations = this.recommendationService.recommendation(
-      temp,
-      wind_speed,
-      warmthIndex,
-    );
-    return { recommendations };
+    const { lat, lon, warmthIndex } = body;
+
+    try {
+      const weather = await this.weatherService.getWeather(lat, lon);
+      console.log('Fetched weather data:', weather);
+
+      const { temp, wind_speed } = weather.main;
+
+      const recommendations = this.recommendationService.recommendation(
+        temp,
+        wind_speed,
+        warmthIndex,
+      );
+      console.log('Generated recommendations:', recommendations);
+
+      return { recommendations };
+    } catch (error) {
+      console.error('Error in recommendation controller:', error.message);
+      throw new Error('Failed to fetch recommendations');
+    }
   }
 }
